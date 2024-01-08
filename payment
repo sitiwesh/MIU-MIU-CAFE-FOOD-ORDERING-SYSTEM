@@ -1,0 +1,159 @@
+<?php
+include 'miumiuconn.php';
+session_start();
+
+
+$userid = isset($_SESSION['cust_ID']) ? $_SESSION['cust_ID'] : null;
+$orderId = isset($_SESSION['order_ID']) ? $_SESSION['order_ID'] : null;
+
+$sql = "SELECT * FROM cart WHERE cust_ID = '$userid' AND order_ID = '$orderId'";
+$result = $conn->query($sql);
+
+if (!$result) {
+    die("Error fetching data: " . $conn->error);
+}
+
+$total = 0; // Initialize total variable
+
+// Process the fetched data
+while ($row = $result->fetch_assoc()) {
+    // Access each row of data, perform necessary operations
+    $itemPrice = $row['itemPrice'];
+    $quantity = $row['quantity'];
+
+    // Perform any calculations or display the data as needed
+    $total += $itemPrice * $quantity;
+}
+
+$conn->close();
+?>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CHECKOUT</title>
+    <link rel="stylesheet" type="text/css" href="style3.css">
+</head>
+<body>
+    <header class="header">
+		<div class="brand">
+            <a href="#" class="MiuMiu">Miu Miu.</a>
+            <img src="gambar\MIUMIU.png" alt="Logo" class="logo">
+        </div>
+	</header>
+
+    <div class="container">
+        <div class="center">
+            <br><h3>PAYMENT DETAILS</h3><br>
+            <form method="POST" action="payment.php" autocomplete="off">
+            <div class="voucher-section">
+                <div class="voucher-box">
+                    <label for="voucherCode">Voucher Code</label>
+                    <input type="text" id="voucherCode" placeholder="Enter voucher code">
+                    <button onclick="validateVoucher(event)">Apply</button>
+                </div>
+
+            </div>
+            <div class="voucher-message">
+                <span id="voucherMessage" style="display: none;"></span>
+            </div>  
+            <table>
+                <tr>
+                    <td>Total Order</td>
+                    <td class="align-right" id="totalOrderResult">RM <?php echo number_format($total, 2); ?></td>
+                </tr>
+                <tr>
+                    <td>Charge</td>
+                    <td class="align-right" id="chargeResult">RM 0.00</td>
+                </tr>
+                <tr>
+                    <td>Delivery Charge</td>
+                    <td class="align-right" id="deliveryChargeResult">RM 5.00</td>
+                </tr>
+                <tr>
+                    <td>Discount</td>
+                    <td class="align-right" id="discountResult">- RM 0.00</td>
+                </tr>
+                <tr>
+                    <td><b>Total</b></td>
+                    <td class="align-right" id="totalResult"><b>RM 5.00</b></td>
+                </tr>
+            </table>
+            
+                </form>
+                <input type="button" value="PAY" onclick="openPopup()">
+                <div class="popup" id="popup">
+                    <img src="gambar\MIUMIU.png">
+                    <b><h2>PAYMENT SUCCESSFUL !</h2></b><br>
+                    <p>Thankyou For Your Order!</p><br>
+                    <p>Your order have been placed, please wait for the delivery.</p><br>
+                    <input type="button" value="OKAY" onclick="closePopup()">
+                </div>
+            </div>
+             <script>
+                function validateVoucher(event) {
+                    event.preventDefault(); // Prevent form submission
+
+                    var userEnteredCode = document.getElementById("voucherCode").value;
+                    var validVoucherCode = "MIUMIU623";
+                    var voucherMessage = document.getElementById("voucherMessage");
+
+                    if (userEnteredCode === validVoucherCode) {
+                        voucherMessage.textContent = "Voucher code applied successfully!";
+                    } else {
+                        voucherMessage.textContent = "Invalid voucher code. Please try again.";
+                    }
+
+                    // Show the voucher message after processing
+                    voucherMessage.style.display = "block";
+
+                    // Calculate total after voucher validation
+                    calculateTotal();
+                }
+            
+                function calculateTotal() {
+                var normalPrice = parseFloat(document.getElementById("normalPrice").value) || 0;
+                var numberOfItems = parseFloat(document.getElementById("numberOfItems").value) || 0;
+                var charge = 0;
+
+                // Update the voucher code here
+                var appliedVoucher = "MIUMIU623"; 
+                var userEnteredCode = document.getElementById("voucherCode").value;
+                var discount = userEnteredCode === appliedVoucher ? 0.2 : 0; // Apply a 20% discount if the voucher matches
+
+                if (numberOfItems === 1) {
+                    charge = 0.05 * normalPrice;
+                } else if (numberOfItems > 1) {
+                    charge = 0.05 * normalPrice * numberOfItems;
+                }
+                var deliveryCharge = 5.00;
+
+                var total = (normalPrice + charge + deliveryCharge) * (1 - discount);
+
+                document.getElementById("charge").textContent = charge.toFixed(2);
+                document.getElementById("discount").textContent = (normalPrice * discount).toFixed(2);
+                document.getElementById("total").textContent = total.toFixed(2);
+
+                var voucherMessage = document.getElementById("voucherMessage");
+                    if (discount > 0) {
+                        voucherMessage.textContent = "Voucher applied: 20% discount!";
+                    } else {
+                        voucherMessage.textContent = ""; // Clear the message if no voucher applied
+                    }
+                }
+        
+                let popup = document.getElementById("popup");
+
+                function openPopup(){
+                    popup.classList.add("open-popup");
+                }
+
+                function closePopup(){
+                    popup.classList.remove("open-popup");
+                }
+            </script>
+    </body>
+</html>
